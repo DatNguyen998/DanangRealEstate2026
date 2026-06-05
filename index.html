@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bất Động Sản Đà Nẵng — Dashboard Phân Tích 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0a1628;
+    --navy-mid: #0e1f3a;
+    --navy-light: #162a4a;
+    --cyan: #00c4cc;
+    --cyan-dim: rgba(0,196,204,0.1);
+    --amber: #f5a623;
+    --amber-dim: rgba(245,166,35,0.1);
+    --green: #22c97a;
+    --green-dim: rgba(34,201,122,0.1);
+    --red: #ff5b5b;
+    --red-dim: rgba(255,91,91,0.1);
+    --blue: #4e9eff;
+    --surface: rgba(255,255,255,0.04);
+    --surface2: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.08);
+    --text: #dde4f0;
+    --text-muted: #6e7f9a;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Be Vietnam Pro', sans-serif;
+    background: var(--navy);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #050e1e 0%, #0c1d38 60%, #060f1f 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 3rem 2rem 2.5rem;
+    position: relative; overflow: hidden;
+  }
+  .header::before {
+    content: ''; position: absolute; top: -80px; right: -40px;
+    width: 360px; height: 360px;
+    background: radial-gradient(circle, rgba(0,196,204,0.07) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .header-inner { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+  .eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.18em;
+    color: var(--cyan); text-transform: uppercase; margin-bottom: 0.6rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--cyan); }
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    line-height: 1.15; margin-bottom: 0.75rem;
+    color: #fff;
+  }
+  .header h1 span { color: var(--cyan); }
+  .header-sub {
+    font-size: 14px; color: var(--text-muted); font-weight: 300;
+    margin-bottom: 2rem; max-width: 560px;
+  }
+  .header-kpis {
+    display: flex; flex-wrap: wrap; gap: 12px;
+  }
+  .kpi {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 18px; min-width: 140px;
+  }
+  .kpi-val { font-size: 20px; font-weight: 700; color: #fff; }
+  .kpi-val.c-cyan { color: var(--cyan); }
+  .kpi-val.c-amber { color: var(--amber); }
+  .kpi-val.c-green { color: var(--green); }
+  .kpi-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* LAYOUT */
+  .main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+  /* TABS */
+  .tabs {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 2rem; border-bottom: 1px solid var(--border);
+    padding-bottom: 1px;
+  }
+  .tab {
+    padding: 8px 18px; border-radius: var(--radius) var(--radius) 0 0;
+    border: 1px solid transparent; border-bottom: none;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    background: transparent; color: var(--text-muted);
+    transition: all 0.2s; font-family: inherit;
+    position: relative; bottom: -1px;
+  }
+  .tab:hover { color: var(--text); background: var(--surface); }
+  .tab.active {
+    background: var(--navy-mid); color: var(--cyan);
+    border-color: var(--border); border-bottom-color: var(--navy-mid);
+  }
+
+  /* PANEL */
+  .panel { display: none; animation: fadeIn 0.25s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* CARDS */
+  .card {
+    background: var(--navy-mid); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem;
+  }
+  .card + .card { margin-top: 1rem; }
+  .card-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--text-muted);
+    margin-bottom: 1.25rem; display: flex; align-items: center; gap: 8px;
+  }
+  .card-title::before { content: ''; width: 3px; height: 14px; background: var(--cyan); border-radius: 2px; }
+
+  /* METRIC GRID */
+  .metric-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px; margin-bottom: 1.5rem;
+  }
+  .metric {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+  }
+  .metric-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .metric-val { font-size: 22px; font-weight: 700; color: #fff; }
+  .metric-val.c-cyan { color: var(--cyan); }
+  .metric-val.c-amber { color: var(--amber); }
+  .metric-val.c-green { color: var(--green); }
+  .metric-val.c-red { color: var(--red); }
+  .metric-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* CHART */
+  .chart-wrap { position: relative; width: 100%; height: 280px; }
+
+  /* CONTROLS */
+  .ctrl-row {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+  .ctrl-label { font-size: 12px; color: var(--text-muted); }
+  select, input[type=number] {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 7px 12px;
+    font-size: 13px; color: var(--text); font-family: inherit;
+    cursor: pointer; outline: none; transition: border-color 0.2s;
+  }
+  select:hover, input[type=number]:hover { border-color: rgba(255,255,255,0.2); }
+  select:focus, input[type=number]:focus { border-color: var(--cyan); }
+
+  /* SCENARIO BUTTONS */
+  .scene-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .sbtn {
+    padding: 7px 14px; border-radius: var(--radius);
+    border: 1px solid var(--border); font-size: 12px; font-weight: 500;
+    cursor: pointer; background: var(--surface); color: var(--text-muted);
+    font-family: inherit; transition: all 0.15s;
+  }
+  .sbtn:hover { color: var(--text); }
+  .sbtn.active-green { background: var(--green-dim); color: var(--green); border-color: rgba(34,201,122,0.3); }
+  .sbtn.active-blue  { background: rgba(78,158,255,0.1); color: var(--blue); border-color: rgba(78,158,255,0.3); }
+  .sbtn.active-amber { background: var(--amber-dim); color: var(--amber); border-color: rgba(245,166,35,0.3); }
+  .sbtn.active-red   { background: var(--red-dim); color: var(--red); border-color: rgba(255,91,91,0.3); }
+
+  /* DISTRICT BARS */
+  .dist-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--radius);
+    cursor: pointer; transition: background 0.15s; margin-bottom: 4px;
+  }
+  .dist-bar:hover { background: var(--surface); }
+  .dist-bar.sel { background: var(--cyan-dim); border: 1px solid rgba(0,196,204,0.2); }
+  .dist-bar:not(.sel) { border: 1px solid transparent; }
+  .dist-name { font-size: 13px; width: 118px; flex-shrink: 0; color: var(--text); }
+  .dist-track {
+    flex: 1; background: rgba(255,255,255,0.06);
+    border-radius: 3px; height: 8px; overflow: hidden;
+  }
+  .dist-fill { height: 100%; border-radius: 3px; transition: width 0.45s cubic-bezier(.4,0,.2,1); }
+  .dist-val { font-size: 12px; font-weight: 600; width: 52px; text-align: right; color: var(--text); }
+
+  /* MORTGAGE */
+  .mortgage-form {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 1.5rem;
+  }
+  @media (max-width: 520px) { .mortgage-form { grid-template-columns: 1fr; } }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 12px; color: var(--text-muted); }
+  .result-table { width: 100%; border-collapse: collapse; }
+  .result-table tr td { padding: 9px 4px; font-size: 13px; }
+  .result-table tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
+  .result-table .r-label { color: var(--text-muted); }
+  .result-table .r-val { text-align: right; font-weight: 500; color: var(--text); }
+  .result-table tr:last-child td { font-size: 15px; font-weight: 600; }
+  .result-table .r-highlight { color: var(--cyan); text-align: right; }
+  .rate-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 1rem;
+  }
+  .rate-cell {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px; text-align: center;
+    transition: all 0.2s;
+  }
+  .rate-cell.active { background: var(--cyan-dim); border-color: rgba(0,196,204,0.3); }
+  .rate-cell .rc-rate { font-size: 12px; color: var(--text-muted); }
+  .rate-cell .rc-val { font-size: 17px; font-weight: 700; color: #fff; margin: 2px 0; }
+  .rate-cell .rc-sub { font-size: 10px; color: var(--text-muted); }
+
+  /* YIELD */
+  .yield-bars {
+    display: flex; gap: 10px; height: 130px;
+    align-items: flex-end; margin: 1rem 0;
+  }
+  .yb-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .yb-bar { width: 100%; border-radius: 3px 3px 0 0; transition: height 0.4s ease; }
+  .yb-label { font-size: 10px; color: var(--text-muted); text-align: center; line-height: 1.3; }
+  .yb-val { font-size: 11px; font-weight: 600; color: var(--text); }
+  .advice-box {
+    background: var(--surface); border-left: 3px solid var(--cyan);
+    border-radius: 0 var(--radius) var(--radius) 0; padding: 12px 14px;
+    font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-top: 1rem;
+  }
+  .advice-box strong { color: var(--text); }
+
+  /* INFRA TIMELINE */
+  .timeline { padding-left: 1.5rem; position: relative; }
+  .tl-item { position: relative; padding-bottom: 22px; }
+  .tl-dot {
+    position: absolute; left: -22px; top: 4px;
+    width: 10px; height: 10px; border-radius: 50%; border: 2px solid;
+  }
+  .tl-line {
+    position: absolute; left: -18px; top: 14px;
+    width: 2px; height: calc(100% - 10px);
+    background: var(--border);
+  }
+  .tl-item:last-child .tl-line { display: none; }
+  .tl-dot.done { background: var(--green); border-color: var(--green); }
+  .tl-dot.progress { background: var(--amber); border-color: var(--amber); }
+  .tl-dot.plan { background: var(--surface); border-color: var(--text-muted); }
+  .tl-year { font-size: 11px; color: var(--text-muted); }
+  .tl-name { font-size: 13px; color: var(--text); margin: 2px 0 4px; }
+  .tl-tag {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 999px;
+  }
+  .tag-done { background: var(--green-dim); color: var(--green); }
+  .tag-progress { background: var(--amber-dim); color: var(--amber); }
+  .tag-plan { background: var(--surface); color: var(--text-muted); }
+
+  /* GRID 2COL */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--navy); }
+  ::-webkit-scrollbar-thumb { background: var(--navy-light); border-radius: 3px; }
+
+  /* FOOTER */
+  footer {
+    text-align: center; padding: 2rem; font-size: 12px;
+    color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 3rem;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="eyebrow">Cập nhật T5/2026</div>
+    <h1>Bất Động Sản<br><span>Đà Nẵng</span></h1>
+    <p class="header-sub">Phân tích bối cảnh, bản đồ thị trường & kịch bản giá — Dashboard tương tác.</p>
+    <div class="header-kpis">
+      <div class="kpi">
+        <div class="kpi-val c-cyan">GRDP ~6.5%</div>
+        <div class="kpi-label">Mục tiêu tăng trưởng 2026</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val c-amber">Liên Chiểu</div>
+        <div class="kpi-label">Vùng tăng trưởng nóng nhất</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val c-green">5–6.5%</div>
+        <div class="kpi-label">Lợi suất cho thuê gross</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" style="color:#fff">+4.5%</div>
+        <div class="kpi-label">Tăng giá trung bình YoY</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('prices',this)">Giá theo quận</button>
+    <button class="tab" onclick="switchTab('forecast',this)">Kịch bản giá</button>
+    <button class="tab" onclick="switchTab('mortgage',this)">Vay mua nhà</button>
+    <button class="tab" onclick="switchTab('yield',this)">Lợi suất</button>
+    <button class="tab" onclick="switchTab('infra',this)">Hạ tầng</button>
+  </div>
+
+  <!-- ===== PANEL: PRICES ===== -->
+  <div class="panel active" id="panel-prices">
+    <div class="metric-grid" id="priceMetrics"></div>
+    <div class="card">
+      <div class="card-title">Giá trung bình theo quận — nhấn để xem chi tiết</div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">Loại BĐS:</span>
+        <select id="propType" onchange="updatePrices()">
+          <option value="land">Đất nền</option>
+          <option value="apt">Căn hộ</option>
+          <option value="villa">Nhà phố / biệt thự</option>
+        </select>
+        <span class="ctrl-label" style="margin-left:8px">Sắp xếp:</span>
+        <select id="sortMode" onchange="updatePrices()">
+          <option value="desc">Giá cao → thấp</option>
+          <option value="asc">Giá thấp → cao</option>
+          <option value="growth">Tăng trưởng YoY</option>
+        </select>
+      </div>
+      <div id="districtBars"></div>
+    </div>
+    <div class="grid-2" style="margin-top:1rem">
+      <div class="card">
+        <div class="card-title">Lịch sử giá 2018–2025</div>
+        <div class="chart-wrap"><canvas id="historyChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">So sánh phân khúc (2026)</div>
+        <div class="chart-wrap"><canvas id="segmentChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PANEL: FORECAST ===== -->
+  <div class="panel" id="panel-forecast">
+    <div class="metric-grid" id="forecastMetrics"></div>
+    <div class="card">
+      <div class="card-title">Kịch bản dự báo 2025–2030</div>
+      <div class="scene-btns">
+        <button class="sbtn active-green" id="btn-bull" onclick="setScenario('bull')">Tích cực +8–10%</button>
+        <button class="sbtn" id="btn-base" onclick="setScenario('base')">Cơ sở +4–5%</button>
+        <button class="sbtn" id="btn-flat" onclick="setScenario('flat')">Đi ngang 0–1%</button>
+        <button class="sbtn" id="btn-bear" onclick="setScenario('bear')">Xấu −2%</button>
+      </div>
+      <div class="chart-wrap" style="height:300px"><canvas id="forecastChart"></canvas></div>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <div class="card-title">Khuyến nghị theo kịch bản</div>
+      <div id="scenarioNote" style="font-size:14px; color:var(--text-muted); line-height:1.7"></div>
+    </div>
+  </div>
+
+  <!-- ===== PANEL: MORTGAGE ===== -->
+  <div class="panel" id="panel-mortgage">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Thông số khoản vay</div>
+        <div class="mortgage-form">
+          <div class="form-group">
+            <label>Giá trị BĐS (tỷ VNĐ)</label>
+            <input type="number" id="mPrice" value="3.5" step="0.1" min="0.5" oninput="calcMortgage()">
+          </div>
+          <div class="form-group">
+            <label>Tỷ lệ đặt cọc (%)</label>
+            <input type="number" id="mDown" value="30" step="5" min="20" max="80" oninput="calcMortgage()">
+          </div>
+          <div class="form-group">
+            <label>Lãi suất / năm (%)</label>
+            <input type="number" id="mRate" value="8.5" step="0.1" min="5" max="15" oninput="calcMortgage()">
+          </div>
+          <div class="form-group">
+            <label>Kỳ hạn vay</label>
+            <select id="mTerm" onchange="calcMortgage()">
+              <option value="10">10 năm</option>
+              <option value="15">15 năm</option>
+              <option value="20" selected>20 năm</option>
+              <option value="25">25 năm</option>
+            </select>
+          </div>
+        </div>
+        <div id="mortgageResult"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">So sánh lãi suất / tháng</div>
+        <div class="rate-grid" id="rateGrid"></div>
+        <div style="margin-top:1.25rem">
+          <div class="card-title">Cơ cấu tổng chi phí</div>
+          <div class="chart-wrap" style="height:200px"><canvas id="mortgagePie"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PANEL: YIELD ===== -->
+  <div class="panel" id="panel-yield">
+    <div class="card">
+      <div class="card-title">Phân tích lợi suất cho thuê</div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">Quận:</span>
+        <select id="yDistrict" onchange="calcYield()">
+          <option value="0">Hải Châu</option>
+          <option value="1">Sơn Trà</option>
+          <option value="2">Thanh Khê</option>
+          <option value="3">Ngũ Hành Sơn</option>
+          <option value="4">Cẩm Lệ</option>
+          <option value="5">Liên Chiểu</option>
+        </select>
+        <span class="ctrl-label">Diện tích (m²):</span>
+        <input type="number" id="yArea" value="65" min="20" max="200" step="5" style="width:80px" oninput="calcYield()">
+      </div>
+      <div class="metric-grid" id="yieldMetrics"></div>
+      <div class="card-title" style="margin-top:0.5rem">So sánh với kênh đầu tư khác</div>
+      <div class="yield-bars" id="yieldBars"></div>
+      <div class="advice-box" id="yieldAdvice"></div>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <div class="card-title">Bubble map: Khoảng cách vs Giá vs Mức độ quan tâm</div>
+      <div class="chart-wrap" style="height:300px"><canvas id="bubbleChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ===== PANEL: INFRA ===== -->
+  <div class="panel" id="panel-infra">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Lộ trình hạ tầng</div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Khu vực:</span>
+          <select id="infraZone" onchange="renderInfra()">
+            <option value="all">Tất cả</option>
+            <option value="north">Phía Bắc (Liên Chiểu)</option>
+            <option value="south">Phía Nam</option>
+            <option value="center">Trung tâm</option>
+          </select>
+        </div>
+        <div class="timeline" id="infraList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Cơ cấu sử dụng đất 2030</div>
+        <div class="chart-wrap"><canvas id="zoningChart"></canvas></div>
+        <div class="card-title" style="margin-top:1.5rem">Tốc độ tăng trưởng theo quận</div>
+        <div class="chart-wrap" style="height:180px"><canvas id="growthChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  Dữ liệu tổng hợp và mô phỏng cho mục đích phân tích. Cập nhật T5/2026. &copy; 2026 Dashboard BĐS Đà Nẵng.
+</footer>
+
+<script>
+// ===================== DATA =====================
+const DATA = {
+  districts: [
+    { name: 'Hải Châu',     land: 105, apt: 80,  villa: 130, growth: 3.2, rentApt: 6.1, dist: 2  },
+    { name: 'Sơn Trà',      land: 90,  apt: 72,  villa: 110, growth: 4.5, rentApt: 6.5, dist: 5  },
+    { name: 'Thanh Khê',    land: 75,  apt: 58,  villa: 95,  growth: 2.8, rentApt: 5.9, dist: 4  },
+    { name: 'Ngũ Hành Sơn', land: 65,  apt: 55,  villa: 85,  growth: 5.1, rentApt: 6.8, dist: 8  },
+    { name: 'Cẩm Lệ',       land: 50,  apt: 42,  villa: 68,  growth: 4.8, rentApt: 6.6, dist: 10 },
+    { name: 'Liên Chiểu',   land: 48,  apt: 40,  villa: 65,  growth: 7.2, rentApt: 6.0, dist: 12 },
+    { name: 'Hòa Vang',     land: 22,  apt: 18,  villa: 35,  growth: 3.0, rentApt: 6.2, dist: 18 },
+  ],
+  history: {
+    labels: ['2018','2019','2020','2021','2022','2023','2024','2025'],
+    coastal: [60, 75, 70, 68, 72, 80, 85, 88],
+    northwest: [18, 25, 24, 26, 28, 32, 38, 45],
+  },
+  scenarios: {
+    bull: {
+      color: '#22c97a', cls: 'active-green',
+      rates: [100, 108, 117, 127, 139, 152],
+      note: '<strong>Kịch bản tích cực (+8–10%/năm):</strong> Điều kiện: FDI bứt phá, cảng Liên Chiểu hoàn thành sớm, lãi suất hạ về 7%. Phù hợp để mua và nắm giữ đất nền vùng ven. Đây là kịch bản lạc quan nhất, yêu cầu nhiều yếu tố thuận lợi cùng lúc.'
+    },
+    base: {
+      color: '#4e9eff', cls: 'active-blue',
+      rates: [100, 104, 109, 114, 120, 126],
+      note: '<strong>Kịch bản cơ sở (+4–5%/năm):</strong> Tăng trưởng ổn định, thanh khoản tốt ở phân khúc ở thực. Phù hợp cho căn hộ tầm trung khu vực Cẩm Lệ, Nam Hòa Xuân. Đây là kịch bản nhiều chuyên gia đồng thuận nhất.'
+    },
+    flat: {
+      color: '#f5a623', cls: 'active-amber',
+      rates: [100, 101, 102, 103, 104, 105],
+      note: '<strong>Kịch bản đi ngang (0–1%/năm):</strong> Rủi ro đầu cơ cao. Chiến lược mua lướt sóng không hiệu quả. Nên chuyển sang BĐS tạo dòng tiền (căn hộ dịch vụ, nhà trọ khu CNC) để hưởng lợi suất cho thuê 5–7% bù đắp giá đi ngang.'
+    },
+    bear: {
+      color: '#ff5b5b', cls: 'active-red',
+      rates: [100, 98, 96, 94, 92, 90],
+      note: '<strong>Kịch bản xấu (−2%/năm):</strong> Kịch bản: tín dụng siết mạnh, kinh tế toàn cầu suy giảm. Ưu tiên bảo toàn vốn, tránh đòn bẩy cao, giữ tiền mặt. Tập trung vào BĐS đã có dòng tiền ổn định và giá trị sử dụng thực.'
+    }
+  },
+  infra: [
+    { year: '2020', name: 'Cầu Trần Thị Lý mở rộng', zone: 'center', status: 'done' },
+    { year: '2022', name: 'Đường vành đai phía Tây (Liên Chiểu)', zone: 'north', status: 'done' },
+    { year: '2023', name: 'KCN Đà Nẵng mở rộng giai đoạn 2', zone: 'north', status: 'done' },
+    { year: '2024', name: 'Cảng Liên Chiểu – gói thầu đầu tiên', zone: 'north', status: 'progress' },
+    { year: '2025', name: 'Metro số 1 (Liên Chiểu – Trung tâm)', zone: 'center', status: 'progress' },
+    { year: '2025', name: 'Đường ven biển Ngũ Hành Sơn – Hội An', zone: 'south', status: 'progress' },
+    { year: '2026', name: 'Khu Thương mại tự do Đà Nẵng khởi công', zone: 'north', status: 'plan' },
+    { year: '2027', name: 'Cảng Liên Chiểu giai đoạn 1 hoàn thành', zone: 'north', status: 'plan' },
+    { year: '2028', name: 'Sân bay Đà Nẵng nhà ga T3', zone: 'center', status: 'plan' },
+    { year: '2030', name: 'Metro số 2 (Nam – Bắc)', zone: 'south', status: 'plan' },
+  ]
+};
+
+// ===================== STATE =====================
+let selDistrict = 0;
+let curScenario = 'bull';
+let forecastChart = null;
+let pieMortgage = null;
+let bubbleChartObj = null;
+let historyChartObj = null;
+let segmentChartObj = null;
+let growthChartObj = null;
+let zoningChartObj = null;
+
+const DISTRICT_COLORS = ['#00c4cc','#22c97a','#4e9eff','#f5a623','#b57aff','#ff5b5b','#5dcfff'];
+
+// ===================== CHART DEFAULTS =====================
+Chart.defaults.color = '#6e7f9a';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = "'Be Vietnam Pro', sans-serif";
+Chart.defaults.font.size = 12;
+
+// ===================== TAB SWITCH =====================
+function switchTab(id, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+  if (id === 'forecast') renderForecast();
+  if (id === 'mortgage') calcMortgage();
+  if (id === 'yield') { calcYield(); renderBubble(); }
+  if (id === 'infra') { renderInfra(); renderZoning(); renderGrowth(); }
+}
+
+// ===================== PRICES TAB =====================
+function updatePrices() {
+  const type = document.getElementById('propType').value;
+  const sort = document.getElementById('sortMode').value;
+  let dists = DATA.districts.map((d, i) => ({ ...d, idx: i }));
+  if (sort === 'desc') dists.sort((a, b) => b[type] - a[type]);
+  else if (sort === 'asc') dists.sort((a, b) => a[type] - b[type]);
+  else dists.sort((a, b) => b.growth - a.growth);
+  const maxVal = sort === 'growth'
+    ? Math.max(...dists.map(d => d.growth))
+    : Math.max(...dists.map(d => d[type]));
+  const container = document.getElementById('districtBars');
+  container.innerHTML = dists.map(d => {
+    const val = sort === 'growth' ? d.growth : d[type];
+    const pct = (val / maxVal * 100).toFixed(1);
+    const isSel = d.idx === selDistrict;
+    return `<div class="dist-bar ${isSel ? 'sel' : ''}" onclick="selectDistrict(${d.idx})">
+      <span class="dist-name">${d.name}</span>
+      <div class="dist-track">
+        <div class="dist-fill" style="width:${pct}%;background:${DISTRICT_COLORS[d.idx]}"></div>
+      </div>
+      <span class="dist-val">${sort === 'growth' ? val.toFixed(1) + '%' : val + ' Tr'}</span>
+    </div>`;
+  }).join('');
+  renderPriceMetrics();
+}
+
+function selectDistrict(idx) {
+  selDistrict = idx;
+  updatePrices();
+}
+
+function renderPriceMetrics() {
+  const d = DATA.districts[selDistrict];
+  document.getElementById('priceMetrics').innerHTML = `
+    <div class="metric"><div class="metric-label">Đất nền — ${d.name}</div><div class="metric-val c-cyan">${d.land}</div><div class="metric-sub">Triệu VNĐ/m²</div></div>
+    <div class="metric"><div class="metric-label">Căn hộ</div><div class="metric-val">${d.apt}</div><div class="metric-sub">Triệu VNĐ/m²</div></div>
+    <div class="metric"><div class="metric-label">Nhà phố / biệt thự</div><div class="metric-val">${d.villa}</div><div class="metric-sub">Triệu VNĐ/m²</div></div>
+    <div class="metric"><div class="metric-label">Tăng trưởng YoY</div><div class="metric-val c-green">+${d.growth}%</div><div class="metric-sub">2025</div></div>
+    <div class="metric"><div class="metric-label">Yield cho thuê</div><div class="metric-val c-amber">${d.rentApt}%</div><div class="metric-sub">Căn hộ gross</div></div>
+  `;
+}
+
+function renderHistory() {
+  if (historyChartObj) historyChartObj.destroy();
+  const ctx = document.getElementById('historyChart').getContext('2d');
+  historyChartObj = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: DATA.history.labels,
+      datasets: [
+        {
+          label: 'Ven Biển (Sơn Trà/NHS)',
+          data: DATA.history.coastal,
+          borderColor: '#00c4cc', backgroundColor: 'rgba(0,196,204,0.08)',
+          fill: true, tension: 0.35, pointRadius: 4, pointBackgroundColor: '#00c4cc'
+        },
+        {
+          label: 'Tây Bắc (Liên Chiểu)',
+          data: DATA.history.northwest,
+          borderColor: '#f5a623', backgroundColor: 'rgba(245,166,35,0.08)',
+          fill: true, tension: 0.35, pointRadius: 4, pointBackgroundColor: '#f5a623'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { boxWidth: 12, padding: 14 } } },
+      scales: {
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => v + 'Tr' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderSegment() {
+  if (segmentChartObj) segmentChartObj.destroy();
+  const ctx = document.getElementById('segmentChart').getContext('2d');
+  segmentChartObj = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: DATA.districts.map(d => d.name),
+      datasets: [
+        { label: 'Đất nền', data: DATA.districts.map(d => d.land), backgroundColor: '#00c4cc', borderRadius: 3 },
+        { label: 'Căn hộ',  data: DATA.districts.map(d => d.apt),  backgroundColor: '#4e9eff', borderRadius: 3 },
+        { label: 'Nhà phố', data: DATA.districts.map(d => d.villa),backgroundColor: '#f5a623', borderRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { boxWidth: 10, padding: 12 } } },
+      scales: {
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { callback: v => v + 'Tr' } },
+        x: { grid: { display: false }, ticks: { maxRotation: 40 } }
+      }
+    }
+  });
+}
+
+// ===================== FORECAST TAB =====================
+function setScenario(s) {
+  curScenario = s;
+  ['bull','base','flat','bear'].forEach(x => {
+    const btn = document.getElementById('btn-' + x);
+    btn.className = 'sbtn';
+  });
+  document.getElementById('btn-' + s).className = 'sbtn ' + DATA.scenarios[s].cls;
+  renderForecast();
+}
+
+function renderForecast() {
+  const sc = DATA.scenarios[curScenario];
+  const endVal = sc.rates[5];
+  const change = (endVal - 100).toFixed(1);
+  document.getElementById('forecastMetrics').innerHTML = `
+    <div class="metric"><div class="metric-label">Chỉ số giá 2030</div><div class="metric-val" style="color:${sc.color}">${endVal}</div><div class="metric-sub">Gốc = 100 (2025)</div></div>
+    <div class="metric"><div class="metric-label">Tổng thay đổi</div><div class="metric-val" style="color:${endVal>=100?'#22c97a':'#ff5b5b'}">${change > 0 ? '+' : ''}${change}%</div><div class="metric-sub">5 năm tới</div></div>
+    <div class="metric"><div class="metric-label">Kịch bản</div><div class="metric-val" style="font-size:14px;color:${sc.color}">${curScenario === 'bull' ? 'Tích cực' : curScenario === 'base' ? 'Cơ sở' : curScenario === 'flat' ? 'Đi ngang' : 'Xấu'}</div><div class="metric-sub">&nbsp;</div></div>
+  `;
+  if (forecastChart) forecastChart.destroy();
+  const ctx = document.getElementById('forecastChart').getContext('2d');
+  forecastChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['2025','2026','2027','2028','2029','2030'],
+      datasets: [{
+        label: 'Chỉ số giá',
+        data: sc.rates,
+        borderColor: sc.color,
+        backgroundColor: sc.color + '18',
+        fill: true, tension: 0.4,
+        pointRadius: 5, pointBackgroundColor: sc.color,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: i => 'Chỉ số: ' + i.raw } } },
+      scales: {
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, min: 85 },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+  document.getElementById('scenarioNote').innerHTML = DATA.scenarios[curScenario].note;
+}
+
+// ===================== MORTGAGE TAB =====================
+function calcMortgage() {
+  const price = parseFloat(document.getElementById('mPrice').value) || 0;
+  const down  = parseFloat(document.getElementById('mDown').value) || 30;
+  const rate  = parseFloat(document.getElementById('mRate').value) || 8.5;
+  const term  = parseInt(document.getElementById('mTerm').value) || 20;
+  const loan = price * (1 - down / 100);
+  const r = (rate / 100) / 12;
+  const n = term * 12;
+  const monthly = loan * 1e9 * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+  const total = monthly * n;
+  const interest = total - loan * 1e9;
+  const fmt = v => (v / 1e6).toFixed(1) + ' Tr';
+  document.getElementById('mortgageResult').innerHTML = `
+    <table class="result-table">
+      <tr><td class="r-label">Giá trị BĐS</td><td class="r-val">${price.toFixed(2)} tỷ</td></tr>
+      <tr><td class="r-label">Đặt cọc (${down}%)</td><td class="r-val">${(price * down / 100).toFixed(2)} tỷ</td></tr>
+      <tr><td class="r-label">Khoản vay</td><td class="r-val">${loan.toFixed(2)} tỷ</td></tr>
+      <tr><td class="r-label">Tổng lãi phải trả</td><td class="r-val" style="color:var(--red)">${fmt(interest)}</td></tr>
+      <tr><td class="r-label">Trả hàng tháng</td><td class="r-highlight">${fmt(monthly)}</td></tr>
+    </table>
+  `;
+  const rates = [7, 8, 8.5, 9, 10, 11];
+  document.getElementById('rateGrid').innerHTML = rates.map(rv => {
+    const mr = (rv / 100) / 12;
+    const m = loan * 1e9 * mr * Math.pow(1 + mr, n) / (Math.pow(1 + mr, n) - 1);
+    const isActive = Math.abs(rv - rate) < 0.3;
+    return `<div class="rate-cell ${isActive ? 'active' : ''}">
+      <div class="rc-rate">${rv}%/năm</div>
+      <div class="rc-val">${(m / 1e6).toFixed(1)}</div>
+      <div class="rc-sub">Tr/tháng</div>
+    </div>`;
+  }).join('');
+  if (pieMortgage) pieMortgage.destroy();
+  const ctxP = document.getElementById('mortgagePie').getContext('2d');
+  pieMortgage = new Chart(ctxP, {
+    type: 'doughnut',
+    data: {
+      labels: ['Gốc vay', 'Tổng lãi'],
+      datasets: [{ data: [loan * 1e9, interest], backgroundColor: ['#00c4cc', '#ff5b5b'], borderWidth: 0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12 } },
+        tooltip: { callbacks: { label: i => (i.raw / 1e9).toFixed(2) + ' tỷ' } }
+      }
+    }
+  });
+}
+
+// ===================== YIELD TAB =====================
+function calcYield() {
+  const idx = parseInt(document.getElementById('yDistrict').value);
+  const area = parseFloat(document.getElementById('yArea').value) || 65;
+  const d = DATA.districts[idx];
+  const propVal = d.apt * area * 1e6;
+  const gross = d.rentApt;
+  const net = (gross - 1.5).toFixed(1);
+  const monthlyRent = propVal * gross / 100 / 12;
+  document.getElementById('yieldMetrics').innerHTML = `
+    <div class="metric"><div class="metric-label">Giá trị ước tính</div><div class="metric-val c-cyan">${(propVal / 1e9).toFixed(2)}</div><div class="metric-sub">tỷ VNĐ</div></div>
+    <div class="metric"><div class="metric-label">Yield gross</div><div class="metric-val c-green">${gross}%</div><div class="metric-sub">/năm</div></div>
+    <div class="metric"><div class="metric-label">Yield net</div><div class="metric-val c-amber">${net}%</div><div class="metric-sub">sau chi phí 1.5%</div></div>
+    <div class="metric"><div class="metric-label">Thu nhập thuê</div><div class="metric-val">${(monthlyRent / 1e6).toFixed(1)}</div><div class="metric-sub">Triệu/tháng</div></div>
+  `;
+  const items = [
+    { label: 'BĐS Gross', val: gross, color: '#22c97a' },
+    { label: 'BĐS Net',   val: parseFloat(net), color: '#00c4cc' },
+    { label: 'TPCP 10Y',  val: 4.8, color: '#4a5a72' },
+    { label: 'Tiết kiệm', val: 5.2, color: '#4e9eff' },
+    { label: 'Vàng SJC',  val: 6.5, color: '#f5a623' },
+  ];
+  const maxV = Math.max(...items.map(i => i.val));
+  document.getElementById('yieldBars').innerHTML = items.map(it => `
+    <div class="yb-col">
+      <div class="yb-val">${it.val}%</div>
+      <div class="yb-bar" style="height:${(it.val / maxV * 105).toFixed(0)}px;background:${it.color}"></div>
+      <div class="yb-label">${it.label}</div>
+    </div>`).join('');
+  const vsBank = parseFloat(net) > 5.2;
+  document.getElementById('yieldAdvice').innerHTML =
+    `<strong>Nhận xét:</strong> Yield net ${net}% ${vsBank ? '>' : '<'} lãi suất tiết kiệm (5.2%). ` +
+    (vsBank
+      ? 'BĐS vẫn hấp dẫn hơn gửi ngân hàng nếu tính đúng dòng tiền và quản lý cho thuê tốt.'
+      : 'Cần cân nhắc chi phí cơ hội. Lợi suất cho thuê chưa bù được rủi ro thanh khoản và vốn vay.');
+}
+
+function renderBubble() {
+  if (bubbleChartObj) bubbleChartObj.destroy();
+  const ctx = document.getElementById('bubbleChart').getContext('2d');
+  const bubbleData = DATA.districts.map((d, i) => ({
+    x: d.dist, y: d.land, r: Math.max(8, d.growth * 3),
+    district: d.name, color: DISTRICT_COLORS[i]
+  }));
+  bubbleChartObj = new Chart(ctx, {
+    type: 'bubble',
+    data: {
+      datasets: bubbleData.map(b => ({
+        label: b.district,
+        data: [b],
+        backgroundColor: b.color + 'aa',
+        borderColor: b.color,
+        borderWidth: 1.5
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { boxWidth: 10, padding: 10, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const d = ctx.raw;
+              return `${d.district || ctx.dataset.label}: ${d.y} Tr/m² | Cách TT ${d.x}km`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Khoảng cách tới Cầu Rồng (km)' }, min: 0, max: 22, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { title: { display: true, text: 'Giá đất nền (Tr/m²)' }, beginAtZero: true, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+}
+
+// ===================== INFRA TAB =====================
+function renderInfra() {
+  const zone = document.getElementById('infraZone').value;
+  const items = zone === 'all' ? DATA.infra : DATA.infra.filter(i => i.zone === zone);
+  const label = { done: 'Hoàn thành', progress: 'Đang triển khai', plan: 'Kế hoạch' };
+  document.getElementById('infraList').innerHTML = items.map(it => `
+    <div class="tl-item">
+      <div class="tl-dot ${it.status}"></div>
+      <div class="tl-line"></div>
+      <div class="tl-year">${it.year}</div>
+      <div class="tl-name">${it.name}</div>
+      <span class="tl-tag tag-${it.status}">${label[it.status]}</span>
+    </div>`).join('');
+}
+
+function renderZoning() {
+  if (zoningChartObj) zoningChartObj.destroy();
+  const ctx = document.getElementById('zoningChart').getContext('2d');
+  zoningChartObj = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Đất ở đô thị', 'Thương mại & Du lịch', 'Công nghiệp & Logistics', 'Cây xanh & Công cộng', 'Khác'],
+      datasets: [{ data: [32, 22, 18, 18, 10], backgroundColor: ['#00c4cc','#4e9eff','#f5a623','#22c97a','#4a5a72'], borderWidth: 0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'right', labels: { boxWidth: 10, padding: 10, font: { size: 11 } } } }
+    }
+  });
+}
+
+function renderGrowth() {
+  if (growthChartObj) growthChartObj.destroy();
+  const ctx = document.getElementById('growthChart').getContext('2d');
+  growthChartObj = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: DATA.districts.map(d => d.name),
+      datasets: [{
+        label: 'Tăng trưởng YoY (%)',
+        data: DATA.districts.map(d => d.growth),
+        backgroundColor: DATA.districts.map((d, i) => DISTRICT_COLORS[i] + 'cc'),
+        borderRadius: 3
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } },
+        x: { grid: { display: false }, ticks: { maxRotation: 40, font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+// ===================== INIT =====================
+updatePrices();
+renderHistory();
+renderSegment();
+setScenario('bull');
+</script>
+</body>
+</html>
