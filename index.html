@@ -204,7 +204,7 @@
   .leaflet-tooltip.map-tip {
     background: var(--navy-mid); color: var(--text);
     border: 1px solid var(--border); border-radius: 6px;
-    font-size: 12px; padding: 4px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    font-size: 11px; padding: 2px 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
   }
   .leaflet-tooltip.map-tip::before { display: none; }
   .leaflet-tooltip.map-tip strong { color: #fff; }
@@ -720,9 +720,12 @@ function renderMapMarkers() {
       fillColor: color,
       fillOpacity: isSel ? 0.9 : 0.65
     }).addTo(districtMap);
+    // every label stays visible; the selected district also shows its price and growth
     m.bindTooltip(
-      `<strong>${d.name}</strong> (${d.role})<br>Đất nền ${d.land} Tr/m² · +${d.growth}% YoY`,
-      { className: 'map-tip', direction: 'right', offset: [10, 0], permanent: isSel }
+      isSel
+        ? `<strong>${d.name}</strong> (${d.role})<br>Đất nền ${d.land} Tr/m² · +${d.growth}% YoY`
+        : `<strong>${d.name}</strong>`,
+      { className: 'map-tip', direction: 'bottom', offset: [0, 4], permanent: true }
     );
     m.on('click', () => selectDistrict(i));
     if (isSel) m.bringToFront();
