@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bất Động Sản Đà Nẵng — Dashboard Phân Tích 2026</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <style>
@@ -190,6 +192,25 @@
   .dist-fill { height: 100%; border-radius: 3px; transition: width 0.45s cubic-bezier(.4,0,.2,1); }
   .dist-val { font-size: 12px; font-weight: 600; width: 52px; text-align: right; color: var(--text); }
 
+  /* MAP */
+  .map-wrap {
+    position: relative; width: 100%; height: 380px;
+    border-radius: var(--radius); overflow: hidden;
+    border: 1px solid var(--border); background: var(--navy);
+  }
+  @media (max-width: 700px) { .map-wrap { height: 300px; } }
+  .map-note { font-size: 11px; color: var(--text-muted); margin-top: 0.75rem; text-align: center; }
+  .leaflet-container { font-family: 'Be Vietnam Pro', sans-serif; background: var(--navy); }
+  .leaflet-tooltip.map-tip {
+    background: var(--navy-mid); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    font-size: 12px; padding: 4px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .leaflet-tooltip.map-tip::before { display: none; }
+  .leaflet-tooltip.map-tip strong { color: #fff; }
+  .leaflet-control-attribution { background: rgba(10,22,40,0.75) !important; color: var(--text-muted) !important; }
+  .leaflet-control-attribution a { color: var(--cyan) !important; }
+
   /* MORTGAGE */
   .mortgage-form {
     display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 1.5rem;
@@ -335,6 +356,19 @@
       </div>
       <div id="districtBars"></div>
     </div>
+    <div class="card" style="margin-top:1rem">
+      <div class="card-title">Bản đồ định vị các phân khu chiến lược</div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">Kích thước vòng tròn:</span>
+        <select id="mapMetric" onchange="renderMapMarkers()">
+          <option value="growth">Tăng trưởng YoY</option>
+          <option value="land">Giá đất nền</option>
+          <option value="apt">Giá căn hộ</option>
+        </select>
+      </div>
+      <div class="map-wrap" id="districtMap"></div>
+      <div class="map-note">Bản đồ tương tác hiển thị vị trí các quận và định hướng vùng — nhấn vòng tròn để xem chi tiết (Kéo/Cuộn để di chuyển).</div>
+    </div>
     <div class="grid-2" style="margin-top:1rem">
       <div class="card">
         <div class="card-title">Lịch sử giá 2018–2025</div>
@@ -469,13 +503,13 @@
 // ===================== DATA =====================
 const DATA = {
   districts: [
-    { name: 'Hải Châu',     land: 105, apt: 80,  villa: 130, growth: 3.2, rentApt: 6.1, dist: 2  },
-    { name: 'Sơn Trà',      land: 90,  apt: 72,  villa: 110, growth: 4.5, rentApt: 6.5, dist: 5  },
-    { name: 'Thanh Khê',    land: 75,  apt: 58,  villa: 95,  growth: 2.8, rentApt: 5.9, dist: 4  },
-    { name: 'Ngũ Hành Sơn', land: 65,  apt: 55,  villa: 85,  growth: 5.1, rentApt: 6.8, dist: 8  },
-    { name: 'Cẩm Lệ',       land: 50,  apt: 42,  villa: 68,  growth: 4.8, rentApt: 6.6, dist: 10 },
-    { name: 'Liên Chiểu',   land: 48,  apt: 40,  villa: 65,  growth: 7.2, rentApt: 6.0, dist: 12 },
-    { name: 'Hòa Vang',     land: 22,  apt: 18,  villa: 35,  growth: 3.0, rentApt: 6.2, dist: 18 },
+    { name: 'Hải Châu',     land: 105, apt: 80,  villa: 130, growth: 3.2, rentApt: 6.1, dist: 2, lat: 16.0544, lng: 108.2202, role: 'Trung tâm' },
+    { name: 'Sơn Trà',      land: 90,  apt: 72,  villa: 110, growth: 4.5, rentApt: 6.5, dist: 5, lat: 16.1235, lng: 108.2718, role: 'Du lịch biển' },
+    { name: 'Thanh Khê',    land: 75,  apt: 58,  villa: 95,  growth: 2.8, rentApt: 5.9, dist: 4, lat: 16.0645, lng: 108.1883, role: 'Thương mại' },
+    { name: 'Ngũ Hành Sơn', land: 65,  apt: 55,  villa: 85,  growth: 5.1, rentApt: 6.8, dist: 8, lat: 16.0125, lng: 108.2581, role: 'Nghỉ dưỡng' },
+    { name: 'Cẩm Lệ',       land: 50,  apt: 42,  villa: 68,  growth: 4.8, rentApt: 6.6, dist: 10, lat: 16.015, lng: 108.2045, role: 'Khu dân cư' },
+    { name: 'Liên Chiểu',   land: 48,  apt: 40,  villa: 65,  growth: 7.2, rentApt: 6.0, dist: 12, lat: 16.0961, lng: 108.1367, role: 'Khu TMTD & Cảng' },
+    { name: 'Hòa Vang',     land: 22,  apt: 18,  villa: 35,  growth: 3.0, rentApt: 6.2, dist: 18, lat: 16.0357, lng: 108.0322, role: 'Mở rộng' },
   ],
   history: {
     labels: ['2018','2019','2020','2021','2022','2023','2024','2025'],
@@ -528,6 +562,8 @@ let historyChartObj = null;
 let segmentChartObj = null;
 let growthChartObj = null;
 let zoningChartObj = null;
+let districtMap = null;
+let mapMarkers = [];
 
 const DISTRICT_COLORS = ['#00c4cc','#22c97a','#4e9eff','#f5a623','#b57aff','#ff5b5b','#5dcfff'];
 
@@ -547,6 +583,8 @@ function switchTab(id, el) {
   if (id === 'mortgage') calcMortgage();
   if (id === 'yield') { calcYield(); renderBubble(); }
   if (id === 'infra') { renderInfra(); renderZoning(); renderGrowth(); }
+  // Leaflet measures its container on init; re-measure once the panel is visible again
+  if (id === 'prices' && districtMap) districtMap.invalidateSize();
 }
 
 // ===================== PRICES TAB =====================
@@ -579,6 +617,7 @@ function updatePrices() {
 function selectDistrict(idx) {
   selDistrict = idx;
   updatePrices();
+  renderMapMarkers();
 }
 
 function renderPriceMetrics() {
@@ -646,6 +685,48 @@ function renderSegment() {
         x: { grid: { display: false }, ticks: { maxRotation: 40 } }
       }
     }
+  });
+}
+
+// ===================== DISTRICT MAP =====================
+function initMap() {
+  if (typeof L === 'undefined') {
+    document.getElementById('districtMap').innerHTML =
+      '<div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:13px">Không tải được bản đồ (Leaflet).</div>';
+    return;
+  }
+  districtMap = L.map('districtMap', { scrollWheelZoom: true, zoomControl: true })
+    .setView([16.06, 108.17], 11);
+  // Free CARTO dark basemap (OpenStreetMap data) — no API key required
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    subdomains: 'abcd', maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  }).addTo(districtMap);
+  renderMapMarkers();
+}
+
+function renderMapMarkers() {
+  if (!districtMap) return;
+  mapMarkers.forEach(m => m.remove());
+  const metric = document.getElementById('mapMetric').value;
+  const maxVal = Math.max(...DATA.districts.map(d => d[metric]));
+  mapMarkers = DATA.districts.map((d, i) => {
+    const isSel = i === selDistrict;
+    const color = DISTRICT_COLORS[i];
+    const m = L.circleMarker([d.lat, d.lng], {
+      radius: 8 + (d[metric] / maxVal) * 14,
+      color: isSel ? '#fff' : color,
+      weight: isSel ? 3 : 1.5,
+      fillColor: color,
+      fillOpacity: isSel ? 0.9 : 0.65
+    }).addTo(districtMap);
+    m.bindTooltip(
+      `<strong>${d.name}</strong> (${d.role})<br>Đất nền ${d.land} Tr/m² · +${d.growth}% YoY`,
+      { className: 'map-tip', direction: 'right', offset: [10, 0], permanent: isSel }
+    );
+    m.on('click', () => selectDistrict(i));
+    if (isSel) m.bringToFront();
+    return m;
   });
 }
 
@@ -882,6 +963,7 @@ function renderGrowth() {
 
 // ===================== INIT =====================
 updatePrices();
+initMap();
 renderHistory();
 renderSegment();
 setScenario('bull');
